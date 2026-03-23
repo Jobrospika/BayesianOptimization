@@ -10,8 +10,8 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 
 #Config
 BOUNDS = torch.tensor([[-2.0], [2.0]])
-N_INIT = 5
-N_ITER = 10
+N_INIT = 3
+N_ITER = 20
 
 
 #Objective Function
@@ -47,6 +47,7 @@ def optimize_acquisition(acq_func, bounds):
         num_restarts=5,
         raw_samples=20,
     )
+    candidate.clamp(0.0, 1.0)
     return candidate
 
 #Plotting
@@ -77,14 +78,14 @@ def plot_iteration(model, train_x, train_y, iteration):
     #Save Figures if necessary
     #plt.savefig(f"Plots/iteration_{iteration:02d}.png")
 
-    plt.pause(0.5)
+    plt.pause(2)
 
 
 #Main Loop
 def run_bayesian_optimization():
-    # initial data in [0,1]
-    train_x = torch.rand(N_INIT, 1)
-    train_y = f(unnormalize(train_x, BOUNDS))
+    train_x_orig = torch.linspace(BOUNDS[0].item(), BOUNDS[1].item(), N_INIT).unsqueeze(-1)
+    train_y = f(train_x_orig)
+    train_x = normalize(train_x_orig, BOUNDS)
 
     for i in range(N_ITER):
         model = train_model(train_x, train_y)
@@ -99,6 +100,9 @@ def run_bayesian_optimization():
         train_y = torch.cat([train_y, new_y])
 
         plot_iteration(model, train_x, train_y, i)
+        print(f"Iteration {i}: new point (normalized) = {new_x.squeeze().numpy()}")
+        print(f"Iteration {i}: new point (original space) = {unnormalize(new_x, BOUNDS).squeeze().numpy()}")
+        print(f"Iteration {i}: train_x.shape = {train_x.shape}, train_y.shape = {train_y.shape}")
 
     return train_x, train_y
 
