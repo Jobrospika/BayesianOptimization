@@ -55,7 +55,7 @@ def plot_iteration(model, train_x, train_y, iteration):
     plt.figure(1)
     plt.clf()
 
-    x = torch.linspace(0, 1, 200).unsqueeze(-1)
+    x = torch.linspace(-2, 2, 200).unsqueeze(-1)
 
     with torch.no_grad():
         posterior = model.posterior(x)
@@ -91,7 +91,7 @@ def run_bayesian_optimization():
         model = train_model(train_x, train_y)
 
         acq = get_acquisition(model, train_y)
-        candidate = optimize_acquisition(acq, torch.tensor([[0.0], [1.0]]))
+        candidate = optimize_acquisition(acq, torch.tensor([[-2.0], [2.0]]))
 
         new_x = candidate
         new_y = f(unnormalize(new_x, BOUNDS))
