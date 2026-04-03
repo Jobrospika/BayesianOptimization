@@ -11,12 +11,12 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 #Config
 BOUNDS = torch.tensor([[-2.0], [2.0]])
 N_INIT = 3
-N_ITER = 20
+N_ITER = 10
 
 
 #Objective Function
 def f(x):
-    return torch.sin(3 * x) + x**2
+    return torch.sin(3*x) + torch.sin(5*x)/2 - 0.2 * x**2
 
 
 #Normilization
@@ -47,7 +47,6 @@ def optimize_acquisition(acq_func, bounds):
         num_restarts=5,
         raw_samples=20,
     )
-    candidate.clamp(0.0, 1.0)
     return candidate
 
 #Plotting
@@ -55,22 +54,24 @@ def plot_iteration(model, train_x, train_y, iteration):
     plt.figure(1)
     plt.clf()
 
-    x = torch.linspace(-2, 2, 200).unsqueeze(-1)
+    x_orig = torch.linspace(-2, 2, 200).unsqueeze(-1)
+    x = normalize(x_orig, BOUNDS)
 
     with torch.no_grad():
         posterior = model.posterior(x)
         mean = posterior.mean
         std = posterior.variance.sqrt()
 
-    plt.plot(x.numpy(), mean.numpy(), label="GP mean")
+    plt.plot(x_orig.numpy(), mean.numpy(), label="GP mean")
     plt.fill_between(
-        x.squeeze().numpy(),
+        x_orig.squeeze().numpy(),
         (mean - 2 * std).squeeze().numpy(),
         (mean + 2 * std).squeeze().numpy(),
         alpha=0.3,
     )
 
-    plt.scatter(train_x.numpy(), train_y.numpy(), color="red")
+    train_x_orig = unnormalize(train_x, BOUNDS)
+    plt.scatter(train_x_orig.numpy(), train_y.numpy(), color="red")
 
     plt.title(f"Iteration {iteration}")
     plt.legend()
@@ -91,7 +92,7 @@ def run_bayesian_optimization():
         model = train_model(train_x, train_y)
 
         acq = get_acquisition(model, train_y)
-        candidate = optimize_acquisition(acq, torch.tensor([[-2.0], [2.0]]))
+        candidate = optimize_acquisition(acq, torch.tensor([[0.0], [1.0]]))
 
         new_x = candidate
         new_y = f(unnormalize(new_x, BOUNDS))
