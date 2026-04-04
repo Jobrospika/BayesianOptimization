@@ -1,3 +1,6 @@
+import imageio.v2 as imageio
+import glob
+
 import torch
 import matplotlib.pyplot as plt
 
@@ -77,7 +80,7 @@ def plot_iteration(model, train_x, train_y, iteration):
     plt.legend()
 
     #Save Figures if necessary
-    #plt.savefig(f"Plots/iteration_{iteration:02d}.png")
+    plt.savefig(f"Plots/iteration_{iteration:02d}.png")
 
     plt.pause(2)
 
@@ -107,6 +110,11 @@ def run_bayesian_optimization():
 
     return train_x, train_y
 
+def create_gif(image_folder="Plots", output_path="bayes_opt.gif", duration=10.0):
+    file_names = sorted(glob.glob(f"{image_folder}/iteration_*.png"))
+    images = [imageio.imread(fn) for fn in file_names]
+    imageio.mimsave(output_path, images, duration=duration)
+
 
 #Run like a trackstar
 def main():
@@ -114,6 +122,8 @@ def main():
     plt.ion()
 
     train_x, train_y = run_bayesian_optimization()
+
+    create_gif()
 
     print("Best value:", train_y.max())
 
